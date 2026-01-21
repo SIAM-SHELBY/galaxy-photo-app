@@ -13,23 +13,18 @@ const emailFrom = process.env.EMAIL_FROM;
 
 const nextAuthSecret = process.env.NEXTAUTH_SECRET;
 
-const isVercel = Boolean(process.env.VERCEL);
+const providers: NextAuthOptions["providers"] = [];
 
-if (isVercel && process.env.NODE_ENV === "production" && !nextAuthSecret) {
-  throw new Error("Missing NEXTAUTH_SECRET env var");
+// Email is required for the app to function, but we only instantiate the provider
+// when configured. This keeps builds from failing when env vars are missing.
+if (emailServer && emailFrom) {
+  providers.push(
+    EmailProvider({
+      server: emailServer,
+      from: emailFrom,
+    })
+  );
 }
-
-if (isVercel && (!emailServer || !emailFrom)) {
-  throw new Error("Missing EMAIL_SERVER / EMAIL_FROM env vars");
-}
-
-const providers: NextAuthOptions["providers"] = [
-  // Email is required for this app.
-  EmailProvider({
-    server: emailServer!,
-    from: emailFrom!,
-  }),
-];
 
 // Google is optional; only enable if configured.
 if (googleClientId && googleClientSecret) {
