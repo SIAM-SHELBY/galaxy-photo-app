@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 
 import { auth } from "@/lib/auth/session";
 import { prisma } from "@/lib/db/prisma";
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
   const viewerId = session.user.id;
 
   // Optimized: single query using EXISTS-style relation filter instead of fetching a big following list.
-  const baseWhere: any = {
+  const baseWhere: Prisma.PhotoWhereInput = {
     visibility: "PUBLIC",
     OR: [
       { authorId: viewerId },
@@ -43,7 +44,7 @@ export async function GET(req: Request) {
     ],
   };
 
-  const where =
+  const where: Prisma.PhotoWhereInput =
     cursor === null
       ? baseWhere
       : {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db/prisma";
 import { getClientIp } from "@/lib/security/ip";
@@ -29,21 +30,18 @@ export async function GET(req: Request) {
   const limit = Math.min(60, Math.max(1, Number(url.searchParams.get("limit") ?? "30")));
   const cursor = parseCursor(url.searchParams);
 
-  const baseWhere: any = {
-    visibility: "PUBLIC",
-  };
+  const baseWhere: Prisma.PhotoWhereInput = { visibility: "PUBLIC" };
 
-  if (category && category !== "all") {
-    baseWhere.category = { slug: category };
-  }
+  const categoryWhere: Prisma.PhotoWhereInput =
+    category && category !== "all" ? { category: { slug: category } } : {};
 
   // Cursor pagination stable by (createdAt desc, id desc)
-  const where =
+  const where: Prisma.PhotoWhereInput =
     cursor === null
-      ? baseWhere
+      ? { ...baseWhere, ...categoryWhere }
       : {
           AND: [
-            baseWhere,
+            { ...baseWhere, ...categoryWhere },
             {
               OR: [
                 { createdAt: { lt: cursor.createdAt } },
