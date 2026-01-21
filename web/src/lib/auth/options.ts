@@ -5,6 +5,42 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 
 import { prisma } from "@/lib/db/prisma";
 
+const googleClientId = process.env.GOOGLE_CLIENT_ID;
+const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+const emailServer = process.env.EMAIL_SERVER;
+const emailFrom = process.env.EMAIL_FROM;
+
+const nextAuthSecret = process.env.NEXTAUTH_SECRET;
+
+const isVercel = Boolean(process.env.VERCEL);
+
+if (isVercel && process.env.NODE_ENV === "production" && !nextAuthSecret) {
+  throw new Error("Missing NEXTAUTH_SECRET env var");
+}
+
+if (isVercel && (!emailServer || !emailFrom)) {
+  throw new Error("Missing EMAIL_SERVER / EMAIL_FROM env vars");
+}
+
+const providers: NextAuthOptions["providers"] = [
+  // Email is required for this app.
+  EmailProvider({
+    server: emailServer!,
+    from: emailFrom!,
+  }),
+];
+
+// Google is optional; only enable if configured.
+if (googleClientId && googleClientSecret) {
+  providers.unshift(
+    GoogleProvider({
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
+    })
+  );
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
 
@@ -12,23 +48,14 @@ export const authOptions: NextAuthOptions = {
     signIn: "/signin",
   },
 
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-    EmailProvider({
-      server: process.env.EMAIL_SERVER!,
-      from: process.env.EMAIL_FROM!,
-    }),
-  ],
+  providers,
 
   session: {
     strategy: "database",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: nextAuthSecret,
   useSecureCookies: process.env.NODE_ENV === "production",
 
   callbacks: {
