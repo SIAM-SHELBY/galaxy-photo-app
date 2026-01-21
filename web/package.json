@@ -8,6 +8,9 @@
   "prisma": {
     "seed": "node prisma/seed.ts"
   },
+  "overrides": {
+    "glob": "^11.0.1"
+  },
   "scripts": {
     "postinstall": "prisma generate",
     "dev": "next dev",
